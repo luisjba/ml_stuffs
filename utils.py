@@ -56,3 +56,13 @@ def images_to_nparray(images, scale=True):
         # Scale
         images /= 255.0
     return images
+
+def labels_to_nparray(labels):
+    """
+    Function to convert a list of numbers to numpy array
+        args:
+            labels: the list of labels
+        return:
+            numpy array 
+    """
+    return np.hstack(labels)
