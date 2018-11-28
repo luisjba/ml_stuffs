@@ -74,35 +74,6 @@ def labels_to_nparray(labels):
     """
     return np.hstack(labels)
 
-def convert_numpy_to_torch_tensors_features_matrix(data, label_encoders = []):
-    """
-        Function to convert numpy dataset with the data grouped by main identifier in the first column and the  and features
-        in the second column. The data value for each feature is in the third column.
-        The resulted torch tensor is shape is n = number of rows and m = number of diferent features.
-        
-        args:
-            data: 
-                Numpy array or dataframe containing the data to convert to torch tensrors. Te column 0 is the group column main identifier, and represent the differentes
-                train examples. The column 1 represent the dimensions or features. Finally the column 2 is the dependent value or the "y" variable for each feature belonging to each main identifier
-            label_encoders: 
-                Represent the encoders used to determine the shape of the matrix, the firt encoder is for the number of rows 
-                and second encoder for the number of columns or features in the matrix    
-        return: 
-            Torch tensor with the shape n=size encoder 0 m= size of encoder 1 (features)
-    """
-    if len(label_encoders) < 2:
-        raise ValueError('The parameter label_encoders must contains 2 items of LabelEncoder')
-    if len([e for e in label_encoders if type(e) is not LabelEncoder]) > 0 :
-        raise ValueError('All the items in the label_encoders list parameter must be of type LabelEncoder')
-    m_rows = len(label_encoders[0].classes_) # Length or size for Dimension 1, the number of rows in the matrix
-    m_cols = len(label_encoders[1].classes_)# Length or size for Dimension 2 ot the number of cols in the matrix
-    m_tensors = torch.zeros(m_rows, m_cols, dtype=torch.float)
-    for i_row in range(m_rows):
-        data_found = data[:,[1,2]][data[:,0] == i_row] #columns filtered by index value for dimension 1
-        if (data_found.shape[0] > 0) : # check that have data
-            m_tensors[i_row,data_found[:,0]] = torch.FloatTensor(data_found[:,1]) # set the values to the corresponding columns
-    return m_tensors
-
 def convert_numpy_to_torch_tensor_features_matrix(data, feature_label_encoder, filter_label_encoder=None, scale=None):
     """
         Function to convert numpy dataset with the data grouped by optional filter in the 0 index column and feature 
