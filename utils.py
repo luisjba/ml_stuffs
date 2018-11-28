@@ -135,10 +135,11 @@ def convert_numpy_to_torch_tensor_features_matrix(data, feature_label_encoder, f
     if data.shape[1] < 2:
         raise ValueError('Yo must provide at least 2 columns  containing the categorical values and dependent value in the last column')
     y_index = data.shape[1] - 1
+    categorical_index = 0 if y_index == 1 else 1
+    # Scaling data
     if scale is not None:
         data[:,y_index] = data[:,y_index] / scale
-    # Transform the feature value
-    categorical_index = 0 if y_index == 1 else 1
+    # Transform the features value
     if not is_numeric(data[:,categorical_index][0]):
         data[:,categorical_index] = feature_label_encoder.transform(data[:,categorical_index])
     rows = 1
@@ -151,17 +152,27 @@ def convert_numpy_to_torch_tensor_features_matrix(data, feature_label_encoder, f
         if not is_numeric(data[:,0][0]):
             data[:,0] = filter_label_encoder.transform(data[:,0])
         rows = len(filter_label_encoder.classes_)
+    filter_data_columns = [0,1,y_index] if  categorical_index == 1 else [0,y_index]
+    # Select the important columns and convert to Float data type
+    data = np.array(data[filter_data_columns], dtype = np.float)
+    # Recalculate y_index
+    y_index = data.shape[1] - 1
     n_features = len(feature_label_encoder.classes_)
     X = torch.zeros(rows, n_features, dtype=torch.float)
     selected_columns = [categorical_index, y_index]
     for i_row in range(rows):
-        data_found = data[:,selected_columns] if categorical_index == 1 else data[:,selected_columns][data[:,0] == i_row]
-        features_found_columns_index = data_found[0]
+        if categorical_index == 0: # no filter to apply
+            data_found = data[:,selected_columns] 
+        else: # Filter by row index 
+            data_found = data[:,selected_columns][data[:,0] == i_row]
+        features_found_columns_index = data_found[0].astype(np.int)
         y_found_values = data_found[:,1]
-        if not y_found_values.dtype.name == 'float64':
-            y_found_values = y_found_values.astype(np.float)
         if (len(features_found_columns_index) > 0) :
-            X[i_row,features_found_columns_index] = torch.FloatTensor(y_found_values)
+            if not y_found_values.dtype.name == 'float64':
+                print('convert {} to float'.format(y_found_values.dtype.name))
+                y_found_values = y_found_values.astype(np.float)
+            y_found_values = torch.FloatTensor(y_found_values)
+            X[i_row,features_found_columns_index] = y_found_values
     return X
         
     
