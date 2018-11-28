@@ -156,8 +156,12 @@ def convert_numpy_to_torch_tensor_features_matrix(data, feature_label_encoder, f
     selected_columns = [categorical_index, y_index]
     for i_row in range(rows):
         data_found = data[:,selected_columns] if categorical_index == 1 else data[:,selected_columns][data[:,0] == i_row]
-        if (data_found.shape[0] > 0) :
-            X[i_row,data_found[0]] = torch.FloatTensor(data_found[:,1])
+        features_found_columns_index = data_found[0]
+        y_found_values = data_found[:,1]
+        if not y_found_values.dtype.name == 'float64':
+            y_found_values = y_found_values.astype(np.float)
+        if (len(features_found_columns_index) > 0) :
+            X[i_row,features_found_columns_index] = torch.FloatTensor(y_found_values)
     return X
         
     
