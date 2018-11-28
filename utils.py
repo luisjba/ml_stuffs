@@ -74,7 +74,7 @@ def labels_to_nparray(labels):
     """
     return np.hstack(labels)
 
-def convert_numpy_to_torch_tensor_features_matrix(data, feature_label_encoder, filter_label_encoder=None, scale=None):
+def convert_numpy_to_torch_tensor_features_matrix(data, feature_label_encoder):
     """
         Function to convert numpy dataset with the data grouped by optional filter in the 0 index column and feature 
         in the next column (or 0 if not filter provided in the index 0 column).
@@ -90,11 +90,6 @@ def convert_numpy_to_torch_tensor_features_matrix(data, feature_label_encoder, f
                 train examples. The column 1 represent the dimensions or features. Finally the column 2 is the dependent value or the "y" variable for each feature belonging to each main identifier
             feature_label_encoder: 
                 The Label encoder for the features classes to contruct the tensor matrix
-            filter_label_encoder:
-                Optional LabelEncoder object used to filter data and to determine the number of rows in the shape for the resulted matrix
-            scale:
-                Optional number to scale the 'y' or dependet value in the data, Usefull to scale to 0-1 for better computation in
-                Neural Network performance and accuraccy.
         return: 
             Torch tensor matrix with shape (n,m)
     """
@@ -107,28 +102,15 @@ def convert_numpy_to_torch_tensor_features_matrix(data, feature_label_encoder, f
         raise ValueError('Yo must provide at least 2 columns  containing the categorical values and dependent value in the last column')
     y_index = data.shape[1] - 1
     categorical_index = 0 if y_index == 1 else 1
-    # Scaling data
-    if scale is not None:
-        data[:,y_index] = data[:,y_index] / scale
     # Transform the features value
     if not is_numeric(data[:,categorical_index][0]):
         data[:,categorical_index] = feature_label_encoder.transform(data[:,categorical_index])
     rows = 1
+    filter_label_encoder = LabelEncoder()
     if categorical_index == 1 :
-        recalculate_rows = True
-        if filter_label_encoder is None:
-           filter_label_encoder = LabelEncoder()
-           filter_label_encoder.fit(data[:,0])
-           rows = len(filter_label_encoder.classes_)
-           recalculate_rows = False
-        elif type(filter_label_encoder) is not LabelEncoder:
-            raise ValueError('The parameter filter_label_encoder must be a LabelEncoder object type')
-        if not is_numeric(data[:,0][0]):
-            data[:,0] = filter_label_encoder.transform(data[:,0])
-        if recalculate_rows:
-            temp_label_encoder = LabelEncoder()
-            temp_label_encoder.fit(data[:,0])
-            rows = len(temp_label_encoder.classes_)
+        filter_label_encoder.fit(data[:,0])
+        data[:,0] = filter_label_encoder.transform(data[:,0])
+        rows = len(filter_label_encoder.classes_)
     filter_data_columns = [0,1,y_index] if  categorical_index == 1 else [0,y_index]
     # Select the important columns and convert to Float data type
     data = np.array(data[filter_data_columns], dtype = np.float)
@@ -138,12 +120,14 @@ def convert_numpy_to_torch_tensor_features_matrix(data, feature_label_encoder, f
     X = torch.zeros(rows, n_features, dtype=torch.float)
     selected_columns = [categorical_index, y_index]
     for i_row in range(rows):
-        if categorical_index == 0: # no filter to apply
-            data_found = data[:,selected_columns] 
-        else: # Filter by row index 
+        if categorical_index == 1: 
+            # Filter by row index
             data_found = data[:,selected_columns][data[:,0] == i_row]
+        else: 
+            # no filter to apply
+            data_found = data[:,selected_columns]  
         if (data_found.shape[0] > 0) : # check that have data
-            features_found_columns_index = data_found[0].astype(np.int)
+            features_found_columns_index = data_found[:,0].astype(np.int)
             y_found_values = data_found[:,1]
             if (len(features_found_columns_index) > 0) :
                 if not y_found_values.dtype.name == 'float64':
