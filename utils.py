@@ -16,6 +16,7 @@ import torch.optim as optim
 from sklearn.preprocessing import LabelEncoder
 
 torch_optimizer_list = [op for op in dir(optim) if  re.match('^(?!_|Optimizer)^[A-Z]+',op)] #Seatch for the avaliable options in the optim module
+torch_activation_list = [a for a in dir(nn.modules.activation) if re.match('^(?!_|Module)^[A-Z]+\w+$',a)]
 
 def torch_optimizer_name(optimizer):
     """
@@ -33,18 +34,16 @@ def torch_optimizer_name(optimizer):
     if optimizer_name is not None:
         return optimizer_name
     else :
-        raise ValueError('Could found torch optimizer name'
-                     'optimizer object:', optimizer) 
+        raise ValueError('Could found torch optimizer name optimizer object:', optimizer) 
     
 def torch_optimizer_get(name, parameters, **arg_dict):
     """
-    Function to get the the optimizer object foun by name and appying the arguments dict
+    Function to get the the optimizer object found by name and applying the arguments dict
         args:
             name: The name of the optimizer
             parameters: the Model Parameters
             **arg_dict: the arguments dict to pass to the optimizer
         return: torch.optim.Optimizer object
-            
     """
     optimizer = None
     for op in torch_optimizer_list :
@@ -54,9 +53,44 @@ def torch_optimizer_get(name, parameters, **arg_dict):
     if optimizer is not None:
         return optimizer(parameters, **arg_dict)
     else :
-        raise ValueError('Could not interpret '
-                     'optimizer function name:', name) 
-        
+        raise ValueError('Could not interpret torch optimizer function name:', name) 
+
+def torch_activation_name(activation):
+    """
+    Funtion to get the name ot the torch module activation based on the posible 
+    list names ['ELU','GLU','Hardshrink','Hardtanh','LeakyReLU','LogSigmoid','LogSoftmax',
+    'PReLU','RReLU','ReLU','ReLU6','SELU','Sigmoid','Softmax','Softmax2d','Softmin','Softplus',
+    'Softshrink','Softsign','Tanh','Tanhshrink','Threshold'] 
+        args:
+            activation: torch.modules.Module object
+        return: str Module activation name
+    """
+    activation_name = None
+    for a in torch_activation_list :
+        if isinstance(activation, eval("nn.modules.activation.{}".format(a))):
+            activation_name = a.lower()
+            break
+    if activation_name is not None:
+        return activation_name
+    else :
+        raise ValueError('Could found activation name activation object:', activation)
+    
+def torch_activation_get(name):
+    """
+    Function to get the the activation Module object found by name
+        args:
+            name: The name of the activation Module
+        return: torch.modules.Module object
+    """
+    activation = None
+    for a in torch_activation_list :
+        if a.lower() == name.lower():
+            activation = eval("nn.modules.activation.{}".format(a))
+            break
+    if activation is not None:
+        return activation()
+    else :
+        raise ValueError('Could not interpret torch Module activation function name:', name)     
 
 
 
