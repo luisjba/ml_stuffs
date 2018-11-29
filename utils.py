@@ -2,20 +2,68 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Nov 23 13:54:34 2018
+Last Updated on Thu Nov 29
 
 @author: luisjba
 """
 import os
+import re
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import torch.nn as nn
+import torch.optim as optim
 from sklearn.preprocessing import LabelEncoder
+
+torch_optimizer_list = [op for op in dir(optim) if  re.match('^(?!_|Optimizer)^[A-Z]+',op)] #Seatch for the avaliable options in the optim module
+
+def torch_optimizer_name(optimizer):
+    """
+    Funtion to get the name ot the torch optimizer based on the posible 
+    list ['ASGD','Adadelta','Adagrad','Adam','Adamax','LBFGS','RMSprop','Rprop','SGD','SparseAdam']
+        args:
+            optimizer: torch.optim.Optimizer object
+        return: str optimizer name
+    """
+    optimizer_name = None
+    for op in torch_optimizer_list :
+        if isinstance(optimizer, eval("optim.{}".format(op))):
+            optimizer_name = op.lower()
+            break
+    if optimizer_name is not None:
+        return optimizer_name
+    else :
+        raise ValueError('Could found torch optimizer name'
+                     'optimizer object:', optimizer) 
+    
+def torch_optimizer_get(name, parameters, **arg_dict):
+    """
+    Function to get the the optimizer object foun by name and appying the arguments dict
+        args:
+            name: The name of the optimizer
+            parameters: the Model Parameters
+            **arg_dict: the arguments dict to pass to the optimizer
+        return: torch.optim.Optimizer object
+            
+    """
+    optimizer = None
+    for op in torch_optimizer_list :
+        if op.lower() == name.lower():
+            optimizer = eval("optim.{}".format(op))
+            break
+    if optimizer is not None:
+        return optimizer(parameters, **arg_dict)
+    else :
+        raise ValueError('Could not interpret '
+                     'optimizer function name:', name) 
+        
+
+
 
 def is_numeric(obj):
     "Function to check if an object is numeric"
     attrs = ['__add__', '__sub__', '__mul__', '__truediv__', '__pow__']
     return all(hasattr(obj, attr) for attr in attrs)
-
 def file_list(directory, extension='jpg'):
     """
     Function that return a list of file paths for files filtered by extension
