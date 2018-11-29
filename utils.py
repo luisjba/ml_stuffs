@@ -17,6 +17,7 @@ from sklearn.preprocessing import LabelEncoder
 
 torch_optimizer_list = [op for op in dir(optim) if  re.match('^(?!_|Optimizer)^[A-Z]+',op)] #Seatch for the avaliable options in the optim module
 torch_activation_list = [a for a in dir(nn.modules.activation) if re.match('^(?!_|Module)^[A-Z]+\w+$',a)]
+torch_loss_list = [l for l in dir(nn.modules.loss) if re.match('^(?!_)^[A-Z]+.*(Loss)$',l)]
 
 def torch_optimizer_name(optimizer):
     """
@@ -90,9 +91,48 @@ def torch_activation_get(name):
     if activation is not None:
         return activation()
     else :
-        raise ValueError('Could not interpret torch Module activation function name:', name)     
-
-
+        raise ValueError('Could not interpret torch Module activation function name:', name)   
+        
+def torch_loss_name(loss):
+    """
+    Funtion to get the name ot the torch Module loss based on the posible 
+    list names ['BCELoss','BCEWithLogitsLoss','CosineEmbeddingLoss','CrossEntropyLoss',
+    'HingeEmbeddingLoss','KLDivLoss','L1Loss','MSELoss','MarginRankingLoss',
+    'MultiLabelMarginLoss','MultiLabelSoftMarginLoss','MultiMarginLoss','NLLLoss',
+    'PoissonNLLLoss','SmoothL1Loss','SoftMarginLoss','TripletMarginLoss']
+        args:
+            activation: torch.modules.loss.{lossClassName}  object
+        return: str Module Loss loss name
+    """
+    loss_name = None
+    for l in torch_loss_list :
+        if isinstance(loss, eval("nn.modules.loss.{}".format(l))):
+            loss_name = l.replace("Loss","").lower()
+            break
+    if loss_name is not None:
+        return loss_name
+    else :
+        raise ValueError('Could found torch Module Loss object:', loss) 
+    
+def torch_loss_get(name):
+    """
+    Function to get the the torch  Module loss object found by name
+        args:
+            name: The name of the loss Module
+        return: torch.modules.loss.{lossClassName} object
+    """
+    loss = None
+    loss_name = name.lower()
+    if not re.match('(loss)$',loss_name):
+        loss_name += "loss"
+    for l in torch_loss_list :
+        if l.lower() == loss_name.lower():
+            loss = eval("nn.modules.loss.{}".format(l))
+            break
+    if loss is not None:
+        return loss()
+    else :
+        raise ValueError('Could not interpret torch Module Loss function name:', name)
 
 def is_numeric(obj):
     "Function to check if an object is numeric"
