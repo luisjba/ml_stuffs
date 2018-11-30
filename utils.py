@@ -6,8 +6,14 @@ Last Updated on Thu Nov 29
 
 @author: luisjba
 """
+# Meta informations.
+__version__ = '1.1.1'
+__author__ = 'Jose Luis Bracamonte Amavizca'
+__author_email__ = 'me@luisjba.com'
+
 import os
 import re
+import json
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -246,6 +252,13 @@ def convert_numpy_to_torch_tensor_features_matrix(data, feature_label_encoder):
             X[i_row,features] = torch.FloatTensor(features_values)
     return X
         
+def json_array_to_numpy(json_array):
+    """
+    Function to covert a json object to numpy
+        args:
+            json_input: json object to parse to numpy array
+    """
+    return np.array(json_array)
     
 
 
