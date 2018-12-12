@@ -2,24 +2,25 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Nov 23 13:54:34 2018
-Last Updated on Thu Nov 29
+Last Updated on Thu Dec 10 2018
 
 @author: luisjba
 """
 # Meta informations.
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 __author__ = 'Jose Luis Bracamonte Amavizca'
 __author_email__ = 'me@luisjba.com'
 
 import os
 import re
-import json
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from sklearn.preprocessing import LabelEncoder
+
+import cv2
 
 torch_optimizer_list = [op for op in dir(optim) if  re.match('^(?!_|Optimizer)^[A-Z]+',op)] #Seatch for the avaliable options in the optim module
 torch_activation_list = [a for a in dir(nn.modules.activation) if re.match('^(?!_|Module)^[A-Z]+\w+$',a)]
@@ -259,8 +260,28 @@ def json_array_to_numpy(json_array):
             json_input: json object to parse to numpy array
     """
     return np.array(json_array)
-    
 
-
-
-
+def extract_images_from_video(video_file, taget_dimension = (48, 48), channels = 1, interval = 1):
+    """
+    Function to extract a list of images form a video for a time interval
+        args:
+            video_file: string video file to open
+            interval: integer in seconds
+        return:
+            images: a list of images
+            
+    """
+    images = []
+    captured_video = cv2.VideoCapture(video_file)
+    frame_rate = captured_video.get(5)
+    success = True
+    while success:
+        frame_id = captured_video.get(1)
+        success, image = captured_video.read()
+        if (frame_id % np.floor(frame_rate) == 0):
+            if len(image.shape) > 2:
+                image = cv2.cvtColor(image, code=cv2.COLOR_BGR2GRAY)
+            image = cv2.resize(image, taget_dimension, interpolation=cv2.INTER_LINEAR)
+            image = np.array([np.array([image]).reshape(list(taget_dimension)+[channels])])
+            images.append(image)
+    return images
